@@ -1,0 +1,87 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.signal import butter, lfilter, freqz
+
+df = pd.read_csv("C:/research/EAG data/2022_08_02/OpenBCI-RAW-2022-08-02_13-53-29.csv", header=None) # Data 파일의 위치
+
+
+def butter_lowpass(cutoff, fs, order=5): # order: 필터의 순서로 기본적으로 5로 정의된다.
+    nyq = 0.5 * fs   # 나이트퀴스트 주파수 계산
+    normal_cutoff = cutoff / nyq  # 디자인 필터
+    b, a = butter(order, normal_cutoff, btype='low', analog=False)
+    return b, a   # 필터 계수를 반환(분자와 분모)
+
+
+def butter_lowpass_filter(data, cutoff, fs, order=5):
+    b, a = butter_lowpass(cutoff, fs, order=order)
+    y = lfilter(b, a, data)
+    return y
+
+
+ # Filter requirements.
+order = 6
+fs = 250.0       # sample rate(샘플링 속도)
+cutoff = 5  # 필터의 차단 주파수(Hz)
+#
+# def draw_original_plot(ch, idx, i):
+#
+#     # 필터의 계수 반환(분자와 분모)
+#     b, a = butter_lowpass(cutoff, fs, order)
+#
+#     # Plot the frequency response.
+#     w, h = freqz(b, a, worN=8000)
+#     plt.subplot(4,4, idx)
+#
+#     plt.title("Original data: " + str(i))
+#     plt.plot(ch)
+#     plt.grid()
+#     y_max = max(ch[100:5000])
+#     y_min = min(ch[100:5000])
+#     plt.xlim(500,5000)
+#     plt.ylim(y_min,y_max)
+
+
+def draw_lowpass_plot(ch, idx):
+    # Demonstrate the use of the filter.
+    # First make some data to be filtered.
+    T = 5.0             # seconds
+    n = int(T * fs)     # total number of samples
+    t = np.linspace(0, T, n, endpoint=False)
+
+    # Filter the data, and plot both the original and filtered signals.
+    y = butter_lowpass_filter(ch, cutoff, fs, order)
+
+    plt.subplot(4, 4, idx + 4)
+
+    plt.plot(y, 'g-', linewidth=2, label='filtered data')
+    plt.title("Original data")
+    plt.title("Lowpass Filter data")
+    plt.grid()
+    plt.xlim(100,9000)
+
+    y_max = max(y[500:9000])
+    y_min = min(y[500:9000])
+
+    plt.ylim(y_min,y_max)
+
+
+
+plt.subplots_adjust(hspace=0.001, wspace=0.35) #hspace=0.55, wspace=0.35
+
+
+def draw_plot(i, ch):
+
+    if i > 4:
+        idx = i+4
+    else :
+        idx = i
+
+    # draw_original_plot(ch, idx, i)
+    draw_lowpass_plot(ch, idx)
+
+for i in range(8):
+    ch = df[i]
+    draw_plot(i+1, ch)
+
+plt.show()

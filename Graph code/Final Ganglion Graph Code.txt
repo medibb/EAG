@@ -1,0 +1,67 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.signal import butter, lfilter, freqz
+
+df = pd.read_csv("C:/research/EAG data/Leg stretch(3).csv", header=None)
+df
+
+plt.plot(df, label='Ganglion')
+plt.legend()
+
+plt.subplot(221)
+plt.plot(df[0])
+
+plt.subplot(222)
+plt.plot(df[1])
+
+plt.subplot(223)
+plt.plot(df[2])
+
+plt.subplot(224)
+plt.plot(df[3])
+
+def butter_lowpass(cutoff, fs, order=5):
+    nyq = 0.5 * fs
+    normal_cutoff = cutoff / nyq
+    b, a = butter(order, normal_cutoff, btype='low', analog=False)
+    return b, a
+
+def butter_lowpass_filter(data, cutoff, fs, order=5):
+    b, a = butter_lowpass(cutoff, fs, order=order)
+    y = lfilter(b, a, data)
+    return y
+
+order = 6
+fs = 200.0
+cutoff = 5
+
+def draw_lowpass_plot(ch, idx):
+    T = 5.0
+    n = int(T * fs)
+    t = np.linspace(0, T, n, endpoint=False)
+
+    y = butter_lowpass_filter(ch, cutoff, fs, order)
+
+    plt.subplot(2, 2, idx+1)
+    plt.plot(df, 'g-', linewidth=2, label='Ganglion filtered data')
+    plt.title("Ganglion Lowpass Filter data")
+
+
+plt.subplots_adjust(hspace=0.35, wspace=0.5)
+
+def draw_plot(i, ch):
+
+    if i > 2:
+        idx = i
+    else:
+        idx = i
+
+    draw_lowpass_plot(ch, idx)
+
+for i in range(4):
+    ch = df[i]
+    draw_plot(i, ch)
+
+
+plt.show()
