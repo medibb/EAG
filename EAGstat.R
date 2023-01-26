@@ -10,6 +10,7 @@ library(readxl)
 eag1 <- read_excel(path = "C:/Users/Jaehyun/OneDrive - 고신대학교/0. project/EAG/data/EAG.xlsx",sheet = 1, col_names=TRUE)
 eag2 <- read_excel(path = "C:/Users/Jaehyun/OneDrive - 고신대학교/0. project/EAG/data/EAG.xlsx",sheet = 2, col_names=TRUE)
 eag2AE <- subset(eag2, eag2$move == 1)
+eag1abs <- abs(eag1)
 
 eag2$channel1 <- ifelse(eag1$channel1 == boxplot(eag1$channel1~eag1$move)$out, NA, eag1$channel1)
 eag2$channel2 <- ifelse(eag1$channel2 == boxplot(eag1$channel2~eag1$move)$out, NA, eag1$channel2)
@@ -58,6 +59,14 @@ par(mfrow = c(10, 2))
 for (i in 1:20){
   plot(x=c(1:8),y=eag1AP[i,1:8], type="l", ylim=c(0,1),ann=F, col=sample(1:255))
 }
+
+# ggplot
+ggplot(eag2) +
+ aes(x = amplitude, y = channel, colour = channel) +
+ geom_point(shape = "circle", size = 1.5) +
+ scale_color_gradient() +
+ theme_minimal() +
+ facet_wrap(vars(move))
 
 par(mfrow = c(1, 1))
 boxplot(eag1AP[1:8])
