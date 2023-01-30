@@ -1,5 +1,5 @@
 # git commit -am "msg"
-# git push - u origin master
+# git push - u origin "main/master"
 
 ### Data wrangling
 
