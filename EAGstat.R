@@ -1,4 +1,4 @@
-# git commit -m "msg"
+# git commit -m "msg", if it dosen't work? git add first
 # git push or #git push - u origin "main/master"
 
 ### Data wrangling
