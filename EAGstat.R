@@ -2,16 +2,13 @@
 # git push - u origin "main/master"
 
 ### Data wrangling
-
-rm() #변?????????
-
-## Excel 
+#eag1:all channels by person, eag2:amplitudes by channel & person
 library(readxl) 
 eag1 <- read_excel(path = "C:/Users/Jaehyun/OneDrive - 고신대학교/0. project/EAG/data/EAG.xlsx",sheet = 1, col_names=TRUE)
-eag2 <- read_excel(path = "C:/Users/Jaehyun/OneDrive - 고신대학교/0. project/EAG/data/EAG.xlsx",sheet = 2, col_names=TRUE)
-eag2AE <- subset(eag2, eag2$move == 1)
-eag1abs <- abs(eag1)
+eag4 <- read_excel(path = "C:/Users/Jaehyun/OneDrive - 고신대학교/0. project/EAG/data/EAG.xlsx",sheet = 2, col_names=TRUE)
+eag2AE <- subset(eag2, eag2$move == 1) #AE; active extension; move == 1
 
+#eag2 generation(remove outlier by IQR), code error for channel6 & 7
 eag2$channel1 <- ifelse(eag1$channel1 == boxplot(eag1$channel1~eag1$move)$out, NA, eag1$channel1)
 eag2$channel2 <- ifelse(eag1$channel2 == boxplot(eag1$channel2~eag1$move)$out, NA, eag1$channel2)
 eag2$channel3 <- ifelse(eag1$channel3 == boxplot(eag1$channel3~eag1$move)$out, NA, eag1$channel3)
@@ -21,7 +18,8 @@ eag2$channel6 <- ifelse(eag1$channel6 == boxplot(eag1$channel6~eag1$move)$out, N
 eag2$channel7 <- ifelse(eag1$channel7 == boxplot(eag1$channel7~eag1$move)$out, NA, eag1$channel7)
 eag2$channel8 <- ifelse(eag1$channel8 == boxplot(eag1$channel8~eag1$move)$out, NA, eag1$channel8)
 
-
+#eag3 generation(remove outlier roughly)
+eag3 <- eag1
 eag3$channel1 <- ifelse(eag1$channel1 > -10000, ifelse(eag1$channel1 > 10000, NA, eag1$channel1),NA)
 eag3$channel2 <- ifelse(eag1$channel2 > -10000, ifelse(eag1$channel2 > 10000, NA, eag1$channel2),NA)
 eag3$channel3 <- ifelse(eag1$channel3 > -10000, ifelse(eag1$channel3 > 10000, NA, eag1$channel3),NA)
@@ -32,7 +30,45 @@ eag3$channel7 <- ifelse(eag1$channel7 > -10000, ifelse(eag1$channel7 > 10000, NA
 eag3$channel8 <- ifelse(eag1$channel8 > -10000, ifelse(eag1$channel8 > 10000, NA, eag1$channel8),NA)
 
 
-#proportional value table generation
+#### Raw data analysis####
+
+#boxplot with eag3; because eag1 has to larger outlier
+par(mfrow = c(1, 1))
+boxplot(eag3[2:9])
+
+#t-test
+library(moonBook)
+mytable(move~., data=eag3, digits=3)
+#post_hoc from anova; LSD test
+library(agricolae)
+res=aov(channel8~move,data = eag3)
+print(LSD.test(res,"move",p.adj="bonferroni",group=F)$comparison)
+
+#channel 1,2,4,5,7,8 were significant
+
+#channel2 boxplot by move
+ggplot(eag3) +
+  aes(x = "", y = channel6, group = move) +
+  geom_boxplot(fill = "#112446") +
+  theme_minimal()
+
+
+#overlapping code for later
+# par(mfrow = c(4, 2))
+# for (i in 1:8){
+# ggplot(eag3) +
+#   aes(x = "", y = eag3[i,], group = move) +
+#   geom_boxplot(fill = "#112446") +
+#   theme_minimal()
+}
+
+
+
+#### Absolute proportional data analysis####
+
+#eag1AP generation; proportional data
+eag1abs <- abs(eag1) #eag1  절대값
+
 eag1AP <- data.frame(0,0,0,0,0,0,0,0)
 colnames(eag1AP)<- c('channel1','channel2','channel3','channel4','channel5','channel6','channel7','channel8')
 
@@ -43,6 +79,32 @@ eag1AP <- eag1AP[-1,]
 eag1AP <- cbind(eag1AP, eag1[10])
 
 
+#boxplot for all channel eag1AP
+par(mfrow = c(1, 1))
+boxplot(eag1AP[1:8])
+
+
+#t-test by movement
+library(moonBook)
+mytable(move~., data=eag1, digits=3)
+mytable(move~., data=eag1abs, digits=3) #absolute
+mytable(move~., data=eag1AP, digits=3) #absolute & proportion
+#post_hoc from anova; LSD test
+library(agricolae)
+res=aov(channel2~move,data = eag1AP)
+print(LSD.test(res,"move",p.adj="bonferroni",group=F)$comparison)
+
+#channel2 boxplot by move
+ggplot(eag1AP) +
+  aes(x = "", y = channel2, group = move) +
+  geom_boxplot(fill = "#112446") +
+  theme_minimal()
+
+##results from eag1AP was channel2; move1 vs move3
+
+
+#eag4; data by channel & person & move
+
 
 
 #plot by channel
@@ -51,49 +113,58 @@ for (i in 1:20){
   plot(x=c(1:8),y=eag3[i,2:9], type="l", ylim=c(-10000,10000),ann=F, axes=F, col=sample(1:255))
 }
 
-par(mfrow = c(1, 1))
-boxplot(eag3[2:9])#boxplot
 
-#plot by channel with absolute & proportion values
+#plot by channel with eag1AP(absolute & proportion values)
 par(mfrow = c(10, 2))
 for (i in 1:20){
   plot(x=c(1:8),y=eag1AP[i,1:8], type="l", ylim=c(0,1),ann=F, col=sample(1:255))
 }
 
-# ggplot
-ggplot(eag2) +
- aes(x = amplitude, y = channel, colour = channel) +
- geom_point(shape = "circle", size = 1.5) +
- scale_color_gradient() +
- theme_minimal() +
- facet_wrap(vars(move))
-
-par(mfrow = c(1, 1))
-boxplot(eag1AP[1:8])
 
 
-library(moonBook)
-mytable(move~., data=eag1, digits=3)
+
 mytable(channel~amplitude, data=eag2AE, digits=3)
-mytable(move~., data=eag1AP, digits=3)
+
 mytable(move~., data=eag2, digits=3)
 mytable(move~., data=eag3, digits=3)
 
-
-
-#anova
-res=aov(channel4~move,data = eag3)
-
-library(agricolae)
-#post_hoc
-print(LSD.test(res,"move",p.adj="bonferroni",group=F)$comparison)
+install.packages("agricolae")
 
 
 
-write.csv(eag, "MM.csv")   #Change name!!
 
 
-### Data ???검
+
+
+
+
+write.csv(eag, "eag.csv")   #Change name!!
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ## Power analysis
 install.packages("pwr")
