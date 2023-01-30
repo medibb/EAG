@@ -1,5 +1,5 @@
-# git commit -am "msg"
-# git push - u origin "main/master"
+# git commit -m "msg"
+# git push or #git push - u origin "main/master"
 
 ### Data wrangling
 #eag1:all channels by person, eag2:amplitudes by channel & person
