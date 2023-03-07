@@ -3,9 +3,9 @@
 
 ### Data wrangling
 #eag1:all channels by person, eag2:amplitudes by channel & person
-library(readxl) 
-eag1 <- read_excel(path = "C:/Users/Jaehyun/OneDrive - 고신대학교/0. project/EAG/data/EAG.xlsx",sheet = 1, col_names=TRUE)
-eag4 <- read_excel(path = "C:/Users/Jaehyun/OneDrive - 고신대학교/0. project/EAG/data/EAG.xlsx",sheet = 2, col_names=TRUE)
+library(readxl)
+eag1 <- read_excel(path = "./data/EAG.xlsx",sheet = 1, col_names=TRUE)
+eag4 <- read_excel(path = "./data/EAG.xlsx",sheet = 2, col_names=TRUE)
 eag2AE <- subset(eag2, eag2$move == 1) #AE; active extension; move == 1
 
 #eag2 generation(remove outlier by IQR), code error for channel6 & 7
@@ -29,6 +29,124 @@ eag3$channel6 <- ifelse(eag1$channel6 > -10000, ifelse(eag1$channel6 > 10000, NA
 eag3$channel7 <- ifelse(eag1$channel7 > -10000, ifelse(eag1$channel7 > 10000, NA, eag1$channel7),NA)
 eag3$channel8 <- ifelse(eag1$channel8 > -10000, ifelse(eag1$channel8 > 10000, NA, eag1$channel8),NA)
 
+
+#flex, ext df 
+sheets <- excel_sheets("./data/EAG.xlsx")
+sheets <- sheets[7:length(sheets)]
+data <- lapply(sheets, function(x) read_excel("./data/EAG.xlsx", col_names=FALSE, sheet = x, range = "A3:Z3"))
+result <- do.call(rbind, data)
+flex <- result[,1:24]
+flex[] <- lapply(flex, as.numeric)
+
+data <- lapply(sheets, function(x) read_excel("./data/EAG.xlsx", col_names=FALSE, sheet = x, range = "A4:Z4"))
+result <- do.call(rbind, data)
+ext <- result[,1:24]
+ext[] <- lapply(ext, as.numeric)
+
+
+flex <- cbind(id = c(1:20), flex = 1, flex)
+ext <- cbind(id = c(1:20), flex = 2, ext)
+eag4 <- rbind(flex,ext)
+
+
+#flexprop, extprop df
+A <- flex[, 2:9]
+B <- A / rowSums(abs(A)) 
+C <- flex[, 10:17]
+D <- C / rowSums(abs(C)) 
+E <- flex[, 18:25]
+F <- E / rowSums(abs(E))
+G <- cbind(B, D, F) 
+flexprop <- G
+flexprop <- cbind(id = c(1:20), flex = 1, flexprop)
+
+A <- ext[, 2:9]
+B <- A / rowSums(abs(A)) 
+C <- ext[, 10:17]
+D <- C / rowSums(abs(C)) 
+E <- ext[, 18:25]
+F <- E / rowSums(abs(E))
+G <- cbind(B, D, F) 
+extprop <- G
+extprop <- cbind(id = c(1:20), flex = 2, extprop)
+
+eag5 <- rbind(flexprop,extprop)
+rm(A, B,C,D,E,F,G)
+
+
+#flexna, extna / na <- outlier by row
+library(dplyr)
+q <- apply(flex, 1, function(x) quantile(x, probs = c(0.25, 0.5, 0.75)))
+iqr <- q[3, ] - q[1, ]
+upper <- q[3, ] + 1.5 * iqr
+lower <- q[1, ] - 1.5 * iqr
+flex_na <- flex
+flex_na[] <- lapply(flex_na, function(x) ifelse(x > upper | x < lower, NA, x))
+flex_na <- cbind(id = c(1:20), flex = 1, flex_na)
+
+q <- apply(ext, 1, function(x) quantile(x, probs = c(0.25, 0.5, 0.75)))
+iqr <- q[3, ] - q[1, ]
+upper <- q[3, ] + 1.5 * iqr
+lower <- q[1, ] - 1.5 * iqr
+ext_na <- ext
+ext_na[] <- lapply(ext_na, function(x) ifelse(x > upper | x < lower, NA, x))
+ext_na <- cbind(id = c(1:20), flex = 2, ext_na)
+rm(q,iqr,upper,lower)
+
+
+eag6 <- rbind(flex_na,ext_na)
+
+
+#flexnaprop, extnaprop df / na.rm=TRUE!!
+A <- flex_na[, 3:10]
+B <- A / apply(A, 1, function(x) sum(abs(x), na.rm = TRUE))
+C <- flex_na[, 11:18]
+D <- C / apply(C, 1, function(x) sum(abs(x), na.rm = TRUE))
+E <- flex_na[, 19:26]
+F <- E / apply(C, 1, function(x) sum(abs(x), na.rm = TRUE))
+G <- cbind(B, D, F) 
+flex_naprop <- G
+flex_naprop <- cbind(id = c(1:20), flex = 1, flex_naprop)
+
+A <- ext_na[, 3:10]
+B <- A / apply(A, 1, function(x) sum(abs(x), na.rm = TRUE))
+C <- ext_na[, 11:18]
+D <- C / apply(C, 1, function(x) sum(abs(x), na.rm = TRUE))
+E <- ext_na[, 19:26]
+F <- E / apply(E, 1, function(x) sum(abs(x), na.rm = TRUE))
+G <- cbind(B, D, F) 
+ext_naprop <- G
+ext_naprop <- cbind(id = c(1:20), flex = 2, ext_naprop)
+
+eag7 <- rbind(flex_naprop,ext_naprop)
+rm(A, B,C,D,E,F,G)
+
+
+# movement atv = 1, psv = 2, sqt = 3
+A <- ext_na[, 3:10]
+C <- ext_na[, 11:18]
+E <- ext_na[, 19:26]
+colnames(C) <- colnames(A)
+colnames(E) <- colnames(A)
+G <- rbind(A, C, E)
+move <- rep(1:3, each =20)
+cbind(move,G)
+
+
+#statistics by angle
+mytable(flex~., data=eag4, digits=3)
+mytable(flex~., data=eag5, digits=3)
+mytable(flex~., data=eag6, digits=3)
+mytable(flex~., data=eag7, digits=3)
+mytable(flex~., data=abs(eag6), digits=3)
+mytable(flex~., data=abs(eag7), digits=3)
+
+table2pptx("mytable(flex~., data=eag4, digits=3)", echo=TRUE,append = FALSE)
+table2pptx("mytable(flex~., data=eag5, digits=3)", echo=TRUE,append = TRUE)
+table2pptx("mytable(flex~., data=eag6, digits=3)", echo=TRUE,append = TRUE)
+table2pptx("mytable(flex~., data=eag7, digits=3)", echo=TRUE,append = TRUE)
+table2pptx("mytable(flex~., data=abs(eag6), digits=3)", echo=TRUE,append = TRUE)
+table2pptx("mytable(flex~., data=abs(eag7), digits=3)", echo=TRUE,append = TRUE)
 
 #### Raw data analysis####
 
@@ -60,7 +178,7 @@ ggplot(eag3) +
 #   aes(x = "", y = eag3[i,], group = move) +
 #   geom_boxplot(fill = "#112446") +
 #   theme_minimal()
-}
+# }
 
 
 
