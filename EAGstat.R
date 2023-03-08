@@ -123,10 +123,11 @@ rm(A,B,C,D,E,F,G)
 
 
 # movement atv = 1, psv = 2, sqt = 3
-
-A <- flex_na[, 3:10]
-B <- flex_na[, 11:18]
-C <- flex_na[, 19:26]
+z <- abs(flex_naprop)
+A <- z[, 3:10]
+B <- z[, 11:18]
+C <- z[, 19:26]
+colnames(A) <- c("channel1","channel2","channel3","channel4","channel5","channel6","channel7","channel8")
 colnames(B) <- colnames(A)
 colnames(C) <- colnames(A)
 D <- rbind(A, B, C)
@@ -135,9 +136,11 @@ ID <- rep(1:20, 3)
 flex <- 1
 E <- cbind(ID, move, flex, D)
 
-A <- ext_na[, 3:10]
-B <- ext_na[, 11:18]
-C <- ext_na[, 19:26]
+z <- abs(ext_naprop)
+A <- z[, 3:10]
+B <- z[, 11:18]
+C <- z[, 19:26]
+colnames(A) <- c("channel1","channel2","channel3","channel4","channel5","channel6","channel7","channel8")
 colnames(B) <- colnames(A)
 colnames(C) <- colnames(A)
 D <- rbind(A, B, C)
@@ -146,35 +149,64 @@ ID <- rep(1:20, 3)
 flex <- 2
 F <- cbind(ID, move, flex, D)
 
-eag2 <- rbind(E, F)
+eag3 <- rbind(E, F)
 
-require(rrtable)
+# delta value
+z <- ext_na - flex_na
+A <- z[, 3:10]
+B <- z[, 11:18]
+C <- z[, 19:26]
+E <- A / apply(A, 1, function(x) sum(abs(x), na.rm = TRUE))
+F <- B / apply(B, 1, function(x) sum(abs(x), na.rm = TRUE))
+G <- C / apply(A, 1, function(x) sum(abs(x), na.rm = TRUE))
+
+colnames(A) <- c("channel1","channel2","channel3","channel4","channel5","channel6","channel7","channel8")
+colnames(B) <- colnames(A)
+colnames(C) <- colnames(A)
+colnames(E) <- colnames(A)
+colnames(F) <- colnames(A)
+colnames(G) <- colnames(A)
+D <- rbind(A, B, C)
+H <- rbind(E, F, G)
+move <- rep(1:3, each =20)
+ID <- rep(1:20, 3)
+eag3 <- cbind(ID, move, D)
+eag3a <- cbind(ID, move, abs(D))
+eag3p <- cbind(ID, move, H)
+eag3pa <- cbind(ID, move, abs(H))
+rm(A,B,C,D,E,F,G)
+
+boxplot(eag3a[3:10])
+
 #statistics by angle
-library(ztable)
-library(xtable)
+library(moonBook)
 library(rrtable)
-mytable(flex~., data=eag4, digits=3)
-mytable(flex~., data=eag5, digits=3)
-mytable(flex~., data=eag6, digits=3)
-mytable(flex~., data=eag7, digits=3)
-mytable(flex~., data=abs(eag6), digits=3)
-mytable(flex~., data=abs(eag7), digits=3)
-A <- mytable(move+flex~., data=eag2, digits=3)
-mytable(flex+move~., data=eag2, digits=3)
 
-table2pptx("mytable(flex~., data=eag4, digits=3)", echo=TRUE,append = FALSE)
-table2pptx("mytable(flex~., data=eag5, digits=3)", echo=TRUE,append = TRUE)
-table2pptx("mytable(flex~., data=eag6, digits=3)", echo=TRUE,append = TRUE)
-table2pptx("mytable(flex~., data=eag7, digits=3)", echo=TRUE,append = TRUE)
-table2pptx("mytable(flex~., data=abs(eag6), digits=3)", echo=TRUE,append = TRUE)
-table2pptx("mytable(flex~., data=abs(eag7), digits=3)", echo=TRUE,append = TRUE)
-table2pptx(A, echo=TRUE,append = TRUE)
+ppt <- mytable(move~.-ID, data=eag3p, digits=3)
+table2pptx(ppt, echo=TRUE,append = TRUE)
+ppt
+ppt <- mytable(move~.-ID, data=eag3pa, digits=3)
+table2pptx(ppt, echo=TRUE,append = TRUE)
+ppt
+
+# ppt <- mytable(flex~.-ID, data=eag4, digits=3)
+# ppt <- mytable(flex~.-ID, data=eag5, digits=3)
+# ppt <- mytable(flex~.-ID, data=eag6, digits=3)
+# ppt <- mytable(flex~.-ID, data=eag7, digits=3)
+# ppt <- mytable(flex~.-ID, data=abs(eag6), digits=3)
+# ppt <- mytable(flex~.-ID, data=abs(eag7), digits=3)
 
 #### Raw data analysis####
 
 #boxplot with eag3; because eag1 has to larger outlier
 par(mfrow = c(1, 1))
-boxplot(eag3[2:9])
+boxplot(eag3[3:10])
+
+df <- eag3p[3:10]
+A <- colMeans(df, na.rm=TRUE)
+B <- order(A, decreasing = TRUE)
+C <- rbind(A,B)
+write.table(C, file = "clipboard", sep = "\t", row.names = FALSE, col.names = FALSE) 
 
 #t-test
 library(moonBook)
@@ -187,8 +219,9 @@ print(LSD.test(res,"move",p.adj="bonferroni",group=F)$comparison)
 #channel 1,2,4,5,7,8 were significant
 
 #channel2 boxplot by move
-ggplot(eag3) +
-  aes(x = "", y = channel6, group = move) +
+library(ggplot2)
+ggplot(eag3p, na.rm = TRUE) +
+  aes(x = "", y = channel7, group = move) +
   geom_boxplot(fill = "#112446") +
   theme_minimal()
 
