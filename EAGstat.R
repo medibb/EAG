@@ -119,27 +119,48 @@ ext_naprop <- G
 ext_naprop <- cbind(id = c(1:20), flex = 2, ext_naprop)
 
 eag7 <- rbind(flex_naprop,ext_naprop)
-rm(A, B,C,D,E,F,G)
+rm(A,B,C,D,E,F,G)
 
 
 # movement atv = 1, psv = 2, sqt = 3
-A <- ext_na[, 3:10]
-C <- ext_na[, 11:18]
-E <- ext_na[, 19:26]
+
+A <- flex_na[, 3:10]
+B <- flex_na[, 11:18]
+C <- flex_na[, 19:26]
+colnames(B) <- colnames(A)
 colnames(C) <- colnames(A)
-colnames(E) <- colnames(A)
-G <- rbind(A, C, E)
+D <- rbind(A, B, C)
 move <- rep(1:3, each =20)
-cbind(move,G)
+ID <- rep(1:20, 3)
+flex <- 1
+E <- cbind(ID, move, flex, D)
 
+A <- ext_na[, 3:10]
+B <- ext_na[, 11:18]
+C <- ext_na[, 19:26]
+colnames(B) <- colnames(A)
+colnames(C) <- colnames(A)
+D <- rbind(A, B, C)
+move <- rep(1:3, each =20)
+ID <- rep(1:20, 3)
+flex <- 2
+F <- cbind(ID, move, flex, D)
 
+eag2 <- rbind(E, F)
+
+require(rrtable)
 #statistics by angle
+library(ztable)
+library(xtable)
+library(rrtable)
 mytable(flex~., data=eag4, digits=3)
 mytable(flex~., data=eag5, digits=3)
 mytable(flex~., data=eag6, digits=3)
 mytable(flex~., data=eag7, digits=3)
 mytable(flex~., data=abs(eag6), digits=3)
 mytable(flex~., data=abs(eag7), digits=3)
+A <- mytable(move+flex~., data=eag2, digits=3)
+mytable(flex+move~., data=eag2, digits=3)
 
 table2pptx("mytable(flex~., data=eag4, digits=3)", echo=TRUE,append = FALSE)
 table2pptx("mytable(flex~., data=eag5, digits=3)", echo=TRUE,append = TRUE)
@@ -147,6 +168,7 @@ table2pptx("mytable(flex~., data=eag6, digits=3)", echo=TRUE,append = TRUE)
 table2pptx("mytable(flex~., data=eag7, digits=3)", echo=TRUE,append = TRUE)
 table2pptx("mytable(flex~., data=abs(eag6), digits=3)", echo=TRUE,append = TRUE)
 table2pptx("mytable(flex~., data=abs(eag7), digits=3)", echo=TRUE,append = TRUE)
+table2pptx(A, echo=TRUE,append = TRUE)
 
 #### Raw data analysis####
 
